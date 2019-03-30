@@ -97,7 +97,7 @@ void BUFS_Dump(char* imagePath, char* pFileToFind){
 
 
 		if(strncmp(pFileName, pFileToFind, fileNameSize) == 0){
-			printf("FOUND, DUMPING...\t");
+			printf("FOUND, DUMPING...\t");		// TODO printf is buffered
 			pFileContent = new char[fileSize];
 			fread(pFileContent, fileSize, 1, pFileInput);	// read file content
 			pFileOutput = fopen(pFileName, "wb");
@@ -105,7 +105,7 @@ void BUFS_Dump(char* imagePath, char* pFileToFind){
 			fclose(pFileOutput);
 			delete[] pFileContent;
 			delete[] pFileName;
-			printf("OK!\n");
+			printf("OK!\n");			// TODO printf is buffered
 			break;
 		};
 
@@ -149,7 +149,8 @@ void BUFS_Build(char* imagePath, char* dirPath){
 			}else{
 
 			// UI
-			printf("%s...\t", edir->d_name);
+			printf("%s...\t", edir->d_name);	// TODO printf is buffered, so is not writing this one to stdout before '\n'
+			fflush(stdout);
 
 			// get values
 			fileNameSize = strlen(edir->d_name);
@@ -183,3 +184,7 @@ void BUFS_Build(char* imagePath, char* dirPath){
 	closedir(dir);
 	exit(0);
 };
+
+// TODO BUFS_Check - checks correctness of image
+// check size of files (header length vs real length)
+// check how many files are in the image, vs how many in header

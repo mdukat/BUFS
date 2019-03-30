@@ -7,6 +7,9 @@
 //#define BUFS_VERSION 1
 
 int main(int argc, char* argv[]){
+
+	// TODO Signal handler (see bufs_misc.cpp)
+
 	if(argc < 2){
 		getSomeHelp(1);
 	};

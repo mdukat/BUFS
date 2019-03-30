@@ -1,4 +1,5 @@
 #include <string.h>
+#include <csignal>
 
 #include "bufs_func.hpp"
 #include "bufs_error.hpp"
@@ -7,6 +8,10 @@
 //#define BUFS_VERSION 1
 
 int main(int argc, char* argv[]){
+
+	// Signal handler (see bufs_misc.cpp)
+	signal(SIGABRT, signalHandler);
+
 	if(argc < 2){
 		getSomeHelp(1);
 	};
@@ -15,6 +20,12 @@ int main(int argc, char* argv[]){
 		// argument check
 		if(!strcmp(argv[1], "v")){
 			getSomeHelp(0);
+		}
+		if(!strcmp(argv[1], "t")){
+			if(argv[2] == nullptr){
+				throw ENOFSPECIF;
+			}
+			BUFS_Check(argv[2]);
 		}
 		if(!strcmp(argv[1], "h")){
 			getSomeHelp(2);

@@ -3,26 +3,35 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "bufs_func.hpp"
 #include "bufs_error.hpp"
 
-unsigned char getNumberOfFiles(char* path){	// TODO check if there are <256 files in directory, throw exception
+unsigned char getNumberOfFiles(char* path){
 	DIR* dir;
 	struct dirent *edir;
 	unsigned char no = 0;
 
-	dir = opendir(path);	// TODO handle errors of opendir
+	dir = opendir(path);
 	if(dir != NULL){
-		while(edir = readdir(dir)){
+		while( (edir = readdir(dir)) != NULL ){
 			no++;
 		}
-	}
-	closedir(dir);
+		closedir(dir);
+		dir = NULL;
+	}else{
+		throw(EOPENDIR);
+	};
+	if(no-2 >=256){
+		throw(ETMFILES);
+	};
 	return no-2;
 };
 
 void checkFile(FILE* fileInput, unsigned char* pFileNumber){
+	// Checks if image file is BUFS file
+
 	char* strBuffer = new char[5];
 	fread(strBuffer, 4, 1, fileInput);
 	if(strncmp(strBuffer, "BUFS", 4) != 0){
@@ -39,6 +48,8 @@ void checkFile(FILE* fileInput, unsigned char* pFileNumber){
 };
 
 void BUFS_List(char* imagePath){
+	// List files in image
+
 	FILE* pFileInput;
 	unsigned char iFileNumber;
 	unsigned char iFileCounter = 0;
@@ -73,6 +84,10 @@ void BUFS_List(char* imagePath){
 };
 
 void BUFS_Dump(char* imagePath, char* pFileToFind){
+	// Dump (extract) file from BUFS image
+	// testSize - Additional test to check if everything is fine
+	// TODO Add "DumpAll" function
+
 	FILE* pFileInput;
 	FILE* pFileOutput;
 	char* pFileContent;
@@ -98,6 +113,8 @@ void BUFS_Dump(char* imagePath, char* pFileToFind){
 
 		if(strncmp(pFileName, pFileToFind, fileNameSize) == 0){
 			printf("FOUND, DUMPING...\t");
+			fflush(stdout);
+
 			pFileContent = new char[fileSize];
 			fread(pFileContent, fileSize, 1, pFileInput);	// read file content
 			pFileOutput = fopen(pFileName, "wb");
@@ -118,6 +135,8 @@ void BUFS_Dump(char* imagePath, char* pFileToFind){
 };
 
 void BUFS_Build(char* imagePath, char* dirPath){
+	// Build BUFS image from specified directory Path
+
 	DIR* dir;
 	struct dirent *edir;
 	FILE* inputFile;
@@ -128,6 +147,8 @@ void BUFS_Build(char* imagePath, char* dirPath){
 	char* dirAndFile;
 
 	printf("%s -> %s...\n", dirPath, imagePath);
+	// TODO Check if in path are directories (error/ignore)
+	// TODO Fix path string if "/" is not last (based on fread() error)
 
 	outputFile = fopen(imagePath, "wb");
 
@@ -140,7 +161,7 @@ void BUFS_Build(char* imagePath, char* dirPath){
 
 	dir = opendir(dirPath);
 	if(dir != NULL){
-		while(edir = readdir(dir)){
+		while( (edir = readdir(dir)) != NULL ){
 			dirAndFile = new char[strlen(dirPath)+strlen(edir->d_name)];
 			strcpy(dirAndFile, dirPath);
 			strcat(dirAndFile, edir->d_name);
@@ -150,6 +171,7 @@ void BUFS_Build(char* imagePath, char* dirPath){
 
 			// UI
 			printf("%s...\t", edir->d_name);
+			fflush(stdout);
 
 			// get values
 			fileNameSize = strlen(edir->d_name);
@@ -180,6 +202,101 @@ void BUFS_Build(char* imagePath, char* dirPath){
 
 	fclose(outputFile);
 	printf("Writed %d files to %s.\n", filesNumber, imagePath);
-	closedir(dir);
+	
+	//closedir(dir);	<- SIGABRT fix
+	exit(0);
+};
+
+// BUFS_Check - checks correctness of image
+// check size of files (header length vs real length)
+// check how many files are in the image, vs how many in header
+
+void BUFS_Check(char* imagePath){
+	FILE* image;
+	char* cBuffer;
+	unsigned int* uiBuffer;
+	unsigned char fileCount = 0;
+	unsigned char fileCounter = 0;
+	unsigned int fileSize = 0;
+	unsigned char nameSize = 0;
+	int sigBreak = 0;
+
+	time_t timeStart;
+	time_t timeNow;
+	time_t timeStartBUFS_Check = time(NULL);
+	unsigned int timeI;
+	float MBperSecond;
+	float donePercent;
+
+	image = fopen(imagePath, "rb");
+
+	// Header test
+	printf("Header test...\t");
+	fflush(stdout);
+	uiBuffer = new unsigned int;
+	fread(uiBuffer, 4, 1, image);
+	if(*uiBuffer == 0x53465542){
+		printf("PASS\n");
+	}else{
+		printf("ERROR\n");
+		exit(1);
+	};
+	delete uiBuffer;
+
+	// Get file count
+	fread(&fileCount, 1, 1, image);
+	//printf("Image says it has %d files...\n", fileCount);
+
+	// Files check
+	while(fileCounter < fileCount){
+		fread(&nameSize, 1, 1, image);
+		//fseek(image, nameSize, SEEK_SET);
+
+		
+		cBuffer = new char[nameSize+1];
+		fread(cBuffer, nameSize, 1, image);
+		cBuffer[nameSize] = '\0';
+		printf("\t\t%d) %s...\t\r", fileCounter+1, cBuffer);
+		fflush(stdout);
+		delete[] cBuffer;
+
+		fread(&fileSize, 4, 1, image);
+		cBuffer = new char;
+		timeStart = time(NULL);
+		timeI = 0;
+		for(unsigned int i = 0; i<fileSize; i++){
+			if(fread(cBuffer, 1, 1, image) == 0){
+				printf("\nFile read error on %lx!\n", ftell(image));
+				sigBreak = 1;
+				break;
+			};
+			
+			timeI++;
+			timeNow = time(NULL);
+			if(timeNow == timeStart+1){	// every second, check speed of read and percent
+				MBperSecond = (float)timeI / 1000000.0f;	// since we read every byte, every second we can calculate new value
+				donePercent = ((float)i / (float)fileSize) * 100.0f;
+				printf("%.2fMB/s %.2f%%\r", MBperSecond, donePercent);
+				fflush(stdout);
+				timeStart = timeNow;
+				timeI = 0;
+			};
+		}
+		delete cBuffer;
+		if(sigBreak != 0){
+			break;
+		};
+
+		fileCounter++;
+		printf("PASS            \n");
+	};
+
+	if(fileCounter == fileCount){
+		printf("File Count\tPASS\n");
+	}else{
+		printf("File Count\tFAIL\n");
+	};
+	fclose(image);
+	printf("BUFS Test took exactly %ld seconds\n", time(NULL)-timeStartBUFS_Check);
 	exit(0);
 };

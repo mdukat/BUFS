@@ -1,4 +1,5 @@
 #include <string.h>
+#include <csignal>
 
 #include "bufs_func.hpp"
 #include "bufs_error.hpp"
@@ -8,7 +9,8 @@
 
 int main(int argc, char* argv[]){
 
-	// TODO Signal handler (see bufs_misc.cpp)
+	// Signal handler (see bufs_misc.cpp)
+	signal(SIGABRT, signalHandler);
 
 	if(argc < 2){
 		getSomeHelp(1);

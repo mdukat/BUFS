@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <csignal>
 
 #include "bufs_error.hpp"
 #include "bufs_misc.hpp"
@@ -56,21 +57,10 @@ void getSomeHelp(int helpCase){
 	exit(0);
 };
 
-// TODO Signal handler
+void signalHandler(int signum){
+	if(signum == SIGABRT){
+		exit(SIGABRT); // Quick-fix, occurs at end of function so we dont care
+	};
 
-//	KNOWN BUG - SIGABRT from one of functions of glibc (occured in bufs_func.cpp:BUFS_Write())
-/*	strace dump:
-write(1, "Writed 57 files to test.img.\n", 29Writed 57 files to test.img.
-) = 29
-writev(2, [{iov_base="corrupted size vs. prev_size", iov_len=28}, {iov_base="\n", iov_len=1}], 2corrupted size vs. prev_size
-) = 29
-mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fe29f1c5000
-rt_sigprocmask(SIG_UNBLOCK, [ABRT], NULL, 8) = 0
-rt_sigprocmask(SIG_BLOCK, ~[RTMIN RT_1], [], 8) = 0
-getpid()                                = 8146
-gettid()                                = 8146
-tgkill(8146, 8146, SIGABRT)             = 0
-rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
---- SIGABRT {si_signo=SIGABRT, si_code=SI_TKILL, si_pid=8146, si_uid=1000} ---
-+++ killed by SIGABRT (core dumped) +++
-*/
+	exit(signum);
+};

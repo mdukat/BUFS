@@ -18,7 +18,10 @@ unsigned char getNumberOfFiles(char* path){	// TODO check if there are <256 file
 			no++;
 		}
 	}
-	closedir(dir);
+	if(dir != NULL){
+		closedir(dir);
+		dir = NULL;
+	}
 	return no-2;
 };
 
@@ -97,7 +100,8 @@ void BUFS_Dump(char* imagePath, char* pFileToFind){
 
 
 		if(strncmp(pFileName, pFileToFind, fileNameSize) == 0){
-			printf("FOUND, DUMPING...\t");		// TODO printf is buffered
+			printf("FOUND, DUMPING...\t");
+			fflush(stdout);
 			pFileContent = new char[fileSize];
 			fread(pFileContent, fileSize, 1, pFileInput);	// read file content
 			pFileOutput = fopen(pFileName, "wb");
@@ -105,7 +109,7 @@ void BUFS_Dump(char* imagePath, char* pFileToFind){
 			fclose(pFileOutput);
 			delete[] pFileContent;
 			delete[] pFileName;
-			printf("OK!\n");			// TODO printf is buffered
+			printf("OK!\n");
 			break;
 		};
 
@@ -149,7 +153,7 @@ void BUFS_Build(char* imagePath, char* dirPath){
 			}else{
 
 			// UI
-			printf("%s...\t", edir->d_name);	// TODO printf is buffered, so is not writing this one to stdout before '\n'
+			printf("%s...\t", edir->d_name);
 			fflush(stdout);
 
 			// get values
@@ -181,7 +185,11 @@ void BUFS_Build(char* imagePath, char* dirPath){
 
 	fclose(outputFile);
 	printf("Writed %d files to %s.\n", filesNumber, imagePath);
-	closedir(dir);
+	
+	if(dir != NULL){
+		closedir(dir);
+		dir = NULL;
+	};
 	exit(0);
 };
 

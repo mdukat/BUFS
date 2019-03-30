@@ -14,7 +14,7 @@ unsigned char getNumberOfFiles(char* path){	// TODO check if there are <256 file
 
 	dir = opendir(path);	// TODO handle errors of opendir
 	if(dir != NULL){
-		while(edir = readdir(dir)){
+		while( (edir = readdir(dir)) != NULL ){
 			no++;
 		}
 	}
@@ -144,7 +144,7 @@ void BUFS_Build(char* imagePath, char* dirPath){
 
 	dir = opendir(dirPath);
 	if(dir != NULL){
-		while(edir = readdir(dir)){
+		while( (edir = readdir(dir)) != NULL ){
 			dirAndFile = new char[strlen(dirPath)+strlen(edir->d_name)];
 			strcpy(dirAndFile, dirPath);
 			strcat(dirAndFile, edir->d_name);

@@ -239,6 +239,7 @@ void BUFS_Check(char* imagePath){
 		printf("PASS\n");
 	}else{
 		printf("ERROR\n");
+		exit(1);
 	};
 	delete uiBuffer;
 
@@ -297,4 +298,5 @@ void BUFS_Check(char* imagePath){
 	};
 	fclose(image);
 	printf("BUFS Test took exactly %ld seconds\n", time(NULL)-timeStartBUFS_Check);
+	exit(0);
 };

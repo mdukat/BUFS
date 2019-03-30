@@ -21,6 +21,12 @@ int main(int argc, char* argv[]){
 		if(!strcmp(argv[1], "v")){
 			getSomeHelp(0);
 		}
+		if(!strcmp(argv[1], "t")){
+			if(argv[2] == nullptr){
+				throw ENOFSPECIF;
+			}
+			BUFS_Check(argv[2]);
+		}
 		if(!strcmp(argv[1], "h")){
 			getSomeHelp(2);
 		}

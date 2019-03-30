@@ -9,11 +9,12 @@ BUFS saves whole file names, saves a lot of space, and is lightweight.
 
 ## Usage
 ```
-./bufs [hvxlc] image_file [input_dir]/[output_file]
+./bufs [hvxltc] image_file [input_dir]/[output_file]
 	 h - Show this help
 	 v - Show version
 	 x image_file output_file - Extract output_file from image_file
 	 l image_file - List files in image
+	 t image_file - Test image for errors [with big images, takes a lot of time]
 	 c image_file input_dir - Create image from files in input_dir
 ```
 
@@ -21,6 +22,7 @@ BUFS saves whole file names, saves a lot of space, and is lightweight.
  - `bufs l /dev/dvd` - List files on BUFS on CD/DVD drive
  - `bufs c /tmp/image.img /home/SuperCoolUser/things\ to\ backup/` - Creates image which you can write to CD/DVD drive
  - `bufs x /dev/dvd "backup-01.01.2019.tar.xz"` - Extracts file from CD/DVD drive, to current directory
+ - `bufs t /dev/dvd` - Tests DVD BUFS
 
 ## Compilation
 ```
